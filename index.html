@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+<meta charset="UTF-8">
+<title>LearnBot</title>
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    --bg-body-1: #f5f0ff;
+    --bg-body-2: #fff5f0;
+    --container-bg: #ffffff;
+    --messages-bg: #faf9fc;
+    --bot-bg: #f0e9ff;
+    --bot-text: #3b2a5a;
+    --text-primary: #222;
+    --border-color: #eee;
+    --input-bg: #ffffff;
+    --input-border: #ddd;
+    --input-text: #222;
+  }
+  body.dark {
+    --bg-body-1: #1a1625;
+    --bg-body-2: #14121c;
+    --container-bg: #201c2e;
+    --messages-bg: #191622;
+    --bot-bg: #2d2640;
+    --bot-text: #e6ddff;
+    --text-primary: #eee;
+    --border-color: #332e44;
+    --input-bg: #201c2e;
+    --input-border: #3a3450;
+    --input-text: #eee;
+  }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(135deg, var(--bg-body-1) 0%, var(--bg-body-2) 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    transition: background 0.3s;
+  }
+  .chat-container {
+    width: 100%;
+    max-width: 480px;
+    height: 640px;
+    background: var(--container-bg);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: background 0.3s;
+    position: relative;
+  }
+  .chat-header {
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    color: white;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+  .chat-header .avatar {
+    width: 38px; height: 38px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .chat-header h1 { font-size: 16px; margin: 0; }
+  .chat-header p { font-size: 12px; margin: 2px 0 0; opacity: 0.85; }
+  .header-info { flex: 1; }
+  .dark-toggle {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    border-radius: 50%;
+    width: 34px; height: 34px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .messages {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--messages-bg);
+    transition: background 0.3s;
+  }
+  .msg {
+    max-width: 78%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 14.5px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .msg.bot {
+    background: var(--bot-bg);
+    color: var(--bot-text);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+  .msg.user {
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+  .msg.typing { color: #999; font-style: italic; }
+  .input-area {
+    display: flex;
+    padding: 12px;
+    gap: 8px;
+    border-top: 1px solid var(--border-color);
+    background: var(--container-bg);
+  }
+  .input-area input {
+    flex: 1;
+    padding: 12px 14px;
+    border: 1px solid var(--input-border);
+    border-radius: 24px;
+    outline: none;
+    font-size: 14px;
+    background: var(--input-bg);
+    color: var(--input-text);
+  }
+  .input-area input:focus { border-color: #7c3aed; }
+  .input-area button {
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    color: white;
+    border: none;
+    border-radius: 24px;
+    padding: 0 18px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .input-area button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .mic-btn {
+    background: var(--bot-bg) !important;
+    color: var(--bot-text) !important;
+    width: 42px;
+    padding: 0 !important;
+    font-size: 16px !important;
+  }
+  .mic-btn.recording {
+    background: #ec4899 !important;
+    color: white !important;
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+  }
+  .quiz-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    border-radius: 50%;
+    width: 34px; height: 34px;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    margin-right: 4px;
+  }
+  .quiz-btn.active {
+    background: rgba(255,255,255,0.55);
+  }
+  .score-badge {
+    background: rgba(255,255,255,0.25);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    color: white;
+    white-space: nowrap;
+    display: none;
+  }
+  .score-badge.show { display: block; }
+  .subject-badge {
+    background: rgba(255,255,255,0.25);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    color: white;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .subject-bar {
+    display: none;
+    flex-direction: column;
+    padding: 10px 14px;
+    gap: 8px;
+    background: var(--bot-bg);
+    border-bottom: 1px solid var(--border-color);
+  }
+  .subject-bar.show { display: flex; }
+  .subject-bar-label {
+    font-size: 12.5px;
+    color: var(--text-primary);
+  }
+  .subject-btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .subject-btn {
+    background: var(--container-bg);
+    border: 1.5px solid #7c3aed;
+    color: var(--text-primary);
+    padding: 7px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .subject-btn:hover {
+    background: var(--bot-bg);
+  }
+  .subject-btn.active {
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    color: white;
+    border-color: transparent;
+  }
+  .quiz-setup-bar {
+    display: none;
+    flex-direction: column;
+    padding: 10px 14px;
+    gap: 8px;
+    background: var(--bot-bg);
+    border-bottom: 1px solid var(--border-color);
+  }
+  .quiz-setup-bar.show { display: flex; }
+  .quiz-type-row {
+    display: flex;
+    gap: 14px;
+  }
+  .quiz-type-label {
+    font-size: 12.5px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+  }
+  .quiz-topic-row {
+    display: flex;
+    gap: 8px;
+  }
+  .quiz-topic-row input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--input-border);
+    border-radius: 16px;
+    outline: none;
+    font-size: 13px;
+    background: var(--input-bg);
+    color: var(--input-text);
+  }
+  .quiz-topic-row button {
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    padding: 0 14px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .quiz-topic-row .cancel-btn {
+    background: #999;
+  }
+  .mcq-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 82%;
+    align-self: flex-start;
+  }
+  .mcq-question {
+    background: var(--bot-bg);
+    color: var(--bot-text);
+    padding: 10px 14px;
+    border-radius: 16px;
+    border-bottom-left-radius: 4px;
+    font-size: 14.5px;
+    margin-bottom: 2px;
+  }
+  .mcq-option-btn {
+    background: var(--container-bg);
+    border: 1.5px solid #7c3aed;
+    color: var(--text-primary);
+    padding: 9px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .mcq-option-btn:hover {
+    background: var(--bot-bg);
+  }
+  .mcq-option-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .mcq-option-btn.picked {
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    color: white;
+    border-color: transparent;
+  }
+  .mcq-option-btn.correct-answer {
+    background: #22c55e !important;
+    color: white !important;
+    border-color: transparent !important;
+  }
+  .mcq-option-btn.wrong-answer {
+    background: #ef4444 !important;
+    color: white !important;
+    border-color: transparent !important;
+  }
+
+  /* Progress panel */
+  .progress-panel {
+    display: none;
+    flex-direction: column;
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 12px 16px;
+    background: var(--messages-bg);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+  .progress-panel.show { display: flex; }
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .panel-close {
+    background: none;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--text-primary);
+  }
+  .progress-section-title {
+    font-weight: 600;
+    margin-top: 8px;
+    margin-bottom: 4px;
+  }
+  .progress-chip {
+    display: inline-block;
+    background: var(--bot-bg);
+    color: var(--bot-text);
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    margin: 2px 4px 2px 0;
+  }
+  .progress-quiz-row {
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--border-color);
+  }
+  .progress-empty {
+    color: #999;
+    font-size: 12.5px;
+  }
+
+  /* Flashcards */
+  .flashcards-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+  }
+  .flashcards-overlay.show { display: flex; }
+  .flashcards-modal {
+    background: var(--container-bg);
+    border-radius: 16px;
+    padding: 16px;
+    width: 88%;
+    max-width: 360px;
+    color: var(--text-primary);
+  }
+  .flashcards-empty {
+    font-size: 13px;
+    color: #999;
+    padding: 20px 0;
+    text-align: center;
+  }
+  .flashcards-viewer-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .flashcard {
+    width: 100%;
+    min-height: 140px;
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    color: white;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 18px;
+    font-size: 14.5px;
+    cursor: pointer;
+    line-height: 1.4;
+  }
+  .flashcard-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12.5px;
+  }
+  .flashcard-nav button {
+    background: var(--bot-bg);
+    color: var(--bot-text);
+    border: none;
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+  .flashcard-hint {
+    font-size: 11px;
+    color: #999;
+  }
+
+  /* Upload bar */
+  .upload-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: var(--bot-bg);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 12.5px;
+    color: var(--bot-text);
+  }
+  .upload-bar.show { display: flex; }
+
+  /* Per-message action row (speak / flashcard) */
+  .msg-actions {
+    display: flex;
+    gap: 6px;
+    align-self: flex-start;
+    margin-top: -4px;
+    margin-bottom: 2px;
+  }
+  .msg-action-btn {
+    background: none;
+    border: none;
+    font-size: 13px;
+    cursor: pointer;
+    opacity: 0.6;
+    padding: 2px 4px;
+  }
+  .msg-action-btn:hover { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="chat-header">
+    <div class="avatar">🎓</div>
+    <div class="header-info">
+      <h1>LearnBot</h1>
+      <p>Your AI learning assistant</p>
+    </div>
+    <span class="score-badge" id="scoreBadge">Score: 0/0</span>
+    <span class="subject-badge" id="subjectBadge" onclick="toggleSubjectBar()">General 📘</span>
+    <button class="quiz-btn" id="progressBtn" onclick="toggleProgressPanel()" title="Progress">📊</button>
+    <button class="quiz-btn" id="flashcardsBtn" onclick="openFlashcardsViewer()" title="Flashcards">🗂</button>
+    <button class="quiz-btn" id="exportBtn" onclick="exportData()" title="Export chat & flashcards">⬇️</button>
+    <button class="quiz-btn" id="quizToggleBtn" onclick="toggleQuizSetup()" title="Quiz Mode">📝</button>
+    <button class="quiz-btn" id="settingsBtn" onclick="toggleApiKeyBar()" title="API Key Settings">⚙️</button>
+    <button class="dark-toggle" id="darkToggle" onclick="toggleDarkMode()">🌙</button>
+  </div>
+  <div class="quiz-setup-bar" id="apiKeyBar">
+    <span class="quiz-type-label" style="margin-bottom:2px;">"Built-in" works automatically — no key needed. Only switch if you want to use your own key instead.</span>
+    <div class="quiz-type-row">
+      <label class="quiz-type-label"><input type="radio" name="aiProvider" value="server" checked onchange="onProviderChange()"> Built-in (no key needed)</label>
+      <label class="quiz-type-label"><input type="radio" name="aiProvider" value="gemini" onchange="onProviderChange()"> My own Gemini key</label>
+      <label class="quiz-type-label"><input type="radio" name="aiProvider" value="claude" onchange="onProviderChange()"> My own Claude key</label>
+    </div>
+    <div class="quiz-topic-row">
+      <input type="password" id="apiKeyInput" placeholder="Paste your API key here">
+      <button onclick="saveApiKey()">Save</button>
+      <button class="cancel-btn" onclick="clearApiKey()">Clear</button>
+    </div>
+  </div>
+  <div class="subject-bar" id="subjectBar">
+    <span class="subject-bar-label">Choose a subject:</span>
+    <div class="subject-btn-row">
+      <button class="subject-btn" data-subject="general" onclick="selectSubject('general')">General</button>
+      <button class="subject-btn" data-subject="math" onclick="selectSubject('math')">📐 Math</button>
+      <button class="subject-btn" data-subject="science" onclick="selectSubject('science')">🔬 Science</button>
+      <button class="subject-btn" data-subject="english" onclick="selectSubject('english')">📖 English</button>
+      <button class="subject-btn" data-subject="history" onclick="selectSubject('history')">🏛 History</button>
+    </div>
+  </div>
+  <div class="quiz-setup-bar" id="quizSetupBar">
+    <div class="quiz-type-row">
+      <label class="quiz-type-label"><input type="radio" name="quizType" value="text" checked> Type Answer</label>
+      <label class="quiz-type-label"><input type="radio" name="quizType" value="mcq"> Multiple Choice</label>
+    </div>
+    <div class="quiz-topic-row">
+      <input type="text" id="quizTopicInput" placeholder="Topic for the quiz (e.g. Photosynthesis)" onkeypress="if(event.key==='Enter') startQuiz()">
+      <button onclick="startQuiz()">Start</button>
+      <button class="cancel-btn" onclick="toggleQuizSetup()">Cancel</button>
+    </div>
+  </div>
+  <div class="progress-panel" id="progressPanel">
+    <div class="panel-header">
+      <span>Your Progress</span>
+      <button class="panel-close" onclick="toggleProgressPanel()">✕</button>
+    </div>
+    <div id="progressContent"></div>
+  </div>
+  <div class="flashcards-overlay" id="flashcardsOverlay">
+    <div class="flashcards-modal">
+      <div class="panel-header">
+        <span>Flashcards</span>
+        <button class="panel-close" onclick="closeFlashcardsViewer()">✕</button>
+      </div>
+      <div id="flashcardsEmpty" class="flashcards-empty">No flashcards yet. Tap 🗂 under any of my answers to save one!</div>
+      <div id="flashcardsViewerBody" class="flashcards-viewer-body" style="display:none;">
+        <div class="flashcard" id="flashcardEl" onclick="flipFlashcard()">
+          <div class="flashcard-face" id="flashcardFace"></div>
+        </div>
+        <div class="flashcard-nav">
+          <button onclick="navFlashcard(-1)">◀ Prev</button>
+          <span id="flashcardCounter">1 / 1</span>
+          <button onclick="navFlashcard(1)">Next ▶</button>
+        </div>
+        <div class="flashcard-hint">Tap card to flip</div>
+      </div>
+    </div>
+  </div>
+  <div class="upload-bar" id="uploadBar">
+    <span id="uploadFileName">No file loaded</span>
+    <button class="cancel-btn" id="uploadClearBtn" onclick="clearUploadedFile()">Clear</button>
+  </div>
+  <div class="messages" id="messages"></div>
+  <div class="input-area">
+    <input type="file" id="fileInput" accept=".txt,.md,.csv" style="display:none;" onchange="handleFileUpload(event)">
+    <button class="mic-btn" id="uploadBtn" onclick="document.getElementById('fileInput').click()" title="Upload a text file">📎</button>
+    <input type="text" id="userInput" placeholder="Type something..." onkeypress="if(event.key==='Enter') sendMessage()">
+    <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()">🎤</button>
+    <button id="sendBtn" onclick="sendMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+// Yahan bot ki "personality" set hoti hai - isko badal ke aap bot ka pura andaz badal sakti hain
+const BASE_SYSTEM_PROMPT = `Tum "LearnBot" ho, ek friendly aur casual AI learning assistant.
+Tum Roman Urdu aur English mix mein baat karte ho, bilkul jaise dost aapas mein karte hain.
+Tumhara tone garmjoshi bhara, halka phulka aur thoda mazahiya hota hai, lekin jab koi seekhna chahe to tum clear aur helpful tareeqe se samjhate ho.
+Jab koi topic samjhao to seedha, chhoti misalon (examples) ke saath samjhao — lamba lecture na do.
+Agar user kisi topic mein confuse ho to usay chhote steps mein tor kar samjhao.
+
+BOHAT ZAROORI QAIDA (language matching):
+- User ke har naye message ki language check karo, na ke pichli conversation ki.
+- Agar user ka is waqt ka message English mein likha hai, to sirf English mein jawab do — koi Urdu/Roman Urdu mix mat karo.
+- Agar user ka is waqt ka message Roman Urdu ya Urdu mein likha hai, to sirf Roman Urdu mein jawab do — koi extra English mix mat karo.
+- Ye rule har message par dobara apply hota hai, chahe pichla jawab kisi bhi language mein tha.
+
+QUIZ MODE QAIDA:
+- Jab user quiz shuru kare, ek waqt mein sirf EK sawal poocho aur uska jawab wait karo.
+- Jab user answer de, pehle batao ke sahi hai ya ghalat, chhota explanation do, phir agla sawal poocho.
+- Har baar jab user kisi sawal ka jawab de (pehla naya quiz sawal chhor kar), apne reply ke bilkul aakhir mein ek nayi line par ye marker zaroor likho:
+  [[SCORE:CORRECT:X]] ya [[SCORE:INCORRECT:X]] — jahan X hamesha SAHI JAWAB ka letter hai (A/B/C/D), chahe user ka jawab sahi ho ya ghalat.
+  Agar type-answer quiz hai (MCQ nahi), X ki jagah sirf "-" likho, jaise [[SCORE:CORRECT:-]].
+- Ye marker sirf jab quiz mode active ho tab lagao, normal chat mein kabhi mat lagao.
+
+MULTIPLE CHOICE QUIZ FORMAT (jab user ne "multiple choice" quiz mangi ho):
+- Naya sawal hamesha bilkul is format mein likho, aur kuch nahi:
+  QUESTION: <sawal ka text>
+  A) <option 1>
+  B) <option 2>
+  C) <option 3>
+  D) <option 4>
+- Koi extra text is format se pehle ya baad mein mat likho jab naya sawal de rahe ho.
+- User apna jawab sirf letter (A, B, C, ya D) ki soorat mein bhejega.
+- Jab user letter bhejay, feedback is tarah do:
+  - Pehli line mein saaf saaf batao "Correct!" ya "Incorrect."
+  - Agar Incorrect ho, to turant agli line mein sahi jawab ka letter aur uska text bhi batao (e.g. "The correct answer was C) <text>").
+  - Phir chhota explanation do ke sahi jawab kyun sahi hai.
+  - Phir [[SCORE:...]] marker lagao (upar wale qaide ke mutabiq, X hamesha sahi jawab ka letter), aur us ke baad agla sawal usi QUESTION/A)/B)/C)/D) format mein do.`;
+
+// Har subject ke liye extra instructions - subject choose karne par ye BASE_SYSTEM_PROMPT ke saath jud jati hain
+const SUBJECT_PROMPTS = {
+  math: `\n\nSUBJECT MODE: Math.
+- Har concept ko step-by-step tor kar samjhao, jaise ek formula, phir uska istemal, phir ek numerical example.
+- Jahan mumkin ho, sawal khud solve kar ke dikhao (working steps ke saath), sirf final answer mat do.
+- Numbers aur equations clearly likho.`,
+  science: `\n\nSUBJECT MODE: Science.
+- Concepts ko real-life examples aur analogies se samjhao (jaise rozmarra ki cheezein).
+- Curiosity ko encourage karo — "why" aur "how" explain karo, sirf facts mat do.
+- Agar kisi experiment ya process ka zikar ho to steps mein tor kar batao.`,
+  english: `\n\nSUBJECT MODE: English.
+- Grammar, vocabulary, aur writing par focus karo.
+- Agar user koi sentence likhe jisme mistake ho, usay pyar se correct karo aur wajah batao.
+- Naye words ka istemal example sentences ke saath samjhao.`,
+  history: `\n\nSUBJECT MODE: History.
+- Waqiyat (events) ko ek chhoti kahani ki tarah sunao taake yaad rehna aasan ho.
+- Dates aur names ke saath thora context bhi do (kyun ye event important tha).
+- Cause-and-effect connections highlight karo.`,
+  general: ``
+};
+
+const SUBJECT_LABELS = {
+  math: 'Math', science: 'Science', english: 'English', history: 'History', general: 'General'
+};
+
+let currentSubject = null;
+
+function getSystemPrompt() {
+  let prompt = BASE_SYSTEM_PROMPT;
+  if (currentSubject && SUBJECT_PROMPTS[currentSubject]) {
+    prompt += SUBJECT_PROMPTS[currentSubject];
+  }
+  return prompt;
+}
+
+const SUBJECT_ICONS = { general: '📘', math: '📐', science: '🔬', english: '📖', history: '🏛' };
+
+function toggleSubjectBar() {
+  document.getElementById('subjectBar').classList.toggle('show');
+}
+
+function selectSubject(subject) {
+  currentSubject = subject === 'general' ? null : subject;
+  document.getElementById('subjectBadge').textContent = `${SUBJECT_LABELS[subject]} ${SUBJECT_ICONS[subject]}`;
+  document.querySelectorAll('.subject-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.subject === subject);
+  });
+  document.getElementById('subjectBar').classList.remove('show');
+  trackSubjectVisit(subject);
+  addMessage(`Switched to ${SUBJECT_LABELS[subject]} mode.`, 'bot');
+  saveStateToStorage();
+}
+
+let conversationHistory = [];
+let isDarkMode = false;
+let isRecording = false;
+let recognition = null;
+let quizActive = false;
+let quizType = 'text';
+let quizScore = { correct: 0, total: 0 };
+let currentQuizTopic = '';
+let activeMCQWrapper = null;
+let activeMCQPickedLetter = null;
+
+// Progress tracker state
+let progressSubjects = [];
+let progressQuizzes = [];
+
+// Flashcards state
+let flashcards = [];
+let flashcardIndex = 0;
+let flashcardFlipped = false;
+let lastUserQuestion = '';
+
+// File upload state
+let uploadedFileContent = '';
+let uploadedFileName = '';
+
+// Persistence state
+let displayLog = [];
+let isReplaying = false;
+
+// API key state (only needed when running this file outside Claude)
+let userApiKey = '';
+let aiProvider = 'server'; // 'server' (built-in, no key needed), 'claude', or 'gemini'
+
+function toggleQuizSetup() {
+  const bar = document.getElementById('quizSetupBar');
+  if (quizActive) {
+    endQuiz();
+    return;
+  }
+  bar.classList.toggle('show');
+  if (bar.classList.contains('show')) {
+    document.getElementById('quizTopicInput').focus();
+  }
+}
+
+function updateScoreBadge() {
+  const badge = document.getElementById('scoreBadge');
+  badge.textContent = `Score: ${quizScore.correct}/${quizScore.total}`;
+  badge.classList.toggle('show', quizActive);
+}
+
+function startQuiz() {
+  const topicInput = document.getElementById('quizTopicInput');
+  const topic = topicInput.value.trim();
+  if (!topic) return;
+
+  const selectedType = document.querySelector('input[name="quizType"]:checked').value;
+  quizType = selectedType;
+  quizActive = true;
+  quizScore = { correct: 0, total: 0 };
+  currentQuizTopic = topic;
+  updateScoreBadge();
+  document.getElementById('quizSetupBar').classList.remove('show');
+  document.getElementById('quizToggleBtn').classList.add('active');
+  document.getElementById('quizToggleBtn').title = 'End Quiz';
+  topicInput.value = '';
+
+  const modeLabel = quizType === 'mcq' ? 'multiple choice' : 'type-the-answer';
+  addMessage(`Quiz started on: ${topic} (${modeLabel})`, 'user');
+
+  let quizKickoff;
+  if (quizType === 'mcq') {
+    quizKickoff = `Start a multiple-choice quiz for me on the topic "${topic}". Ask exactly one question at a time, with 4 options labeled A) B) C) D), and wait for my answer before giving the next question.`;
+  } else {
+    quizKickoff = `Start a quiz for me on the topic "${topic}". Ask exactly one question at a time and wait for my answer before giving the next question.`;
+  }
+  conversationHistory.push({ role: 'user', content: quizKickoff });
+  callBot();
+}
+
+function endQuiz() {
+  quizActive = false;
+  document.getElementById('quizToggleBtn').classList.remove('active');
+  document.getElementById('quizToggleBtn').title = 'Quiz Mode';
+  if (quizScore.total > 0) {
+    trackQuizCompletion(currentQuizTopic || 'Untitled', quizType, quizScore);
+  }
+  updateScoreBadge();
+  addMessage(`Quiz ended. Final score: ${quizScore.correct}/${quizScore.total}`, 'bot');
+  saveStateToStorage();
+}
+
+function toggleDarkMode() {
+  isDarkMode = !isDarkMode;
+  document.body.classList.toggle('dark', isDarkMode);
+  document.getElementById('darkToggle').textContent = isDarkMode ? '☀️' : '🌙';
+  saveStateToStorage();
+}
+
+function toggleVoiceInput() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert('Your browser does not support voice input. Try Chrome.');
+    return;
+  }
+  const micBtn = document.getElementById('micBtn');
+
+  if (isRecording) {
+    recognition.stop();
+    return;
+  }
+
+  recognition = new SpeechRecognition();
+  // 'en-US' has the widest browser support and works well for Roman Urdu/English mixed speech.
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => {
+    isRecording = true;
+    micBtn.classList.add('recording');
+    micBtn.textContent = '⏹';
+  };
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    const input = document.getElementById('userInput');
+    input.value = input.value ? input.value + ' ' + transcript : transcript;
+  };
+
+  recognition.onerror = (event) => {
+    isRecording = false;
+    micBtn.classList.remove('recording');
+    micBtn.textContent = '🎤';
+    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+      alert('Microphone access was blocked. Please allow microphone permission for this page and try again.');
+    } else if (event.error === 'no-speech') {
+      // User didn't say anything — no need to alert, just reset silently.
+    } else {
+      alert('Voice input error: ' + event.error);
+    }
+  };
+
+  recognition.onend = () => {
+    isRecording = false;
+    micBtn.classList.remove('recording');
+    micBtn.textContent = '🎤';
+  };
+
+  try {
+    recognition.start();
+  } catch (err) {
+    alert('Could not start voice input: ' + err.message);
+  }
+}
+
+function formatBotText(text) {
+  // Escape HTML first so bot text can't inject markup
+  let escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // **bold** -> <strong>bold</strong>
+  escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+  const lines = escaped.split('\n');
+  let html = '';
+  let inList = false;
+
+  for (const line of lines) {
+    const bulletMatch = line.match(/^\s*[-*]\s+(.+)/);
+    if (bulletMatch) {
+      if (!inList) { html += '<ul style="margin:4px 0 4px 18px; padding:0;">'; inList = true; }
+      html += `<li>${bulletMatch[1]}</li>`;
+    } else {
+      if (inList) { html += '</ul>'; inList = false; }
+      if (line.trim() === '') html += '<br>';
+      else html += `<div>${line}</div>`;
+    }
+  }
+  if (inList) html += '</ul>';
+  return html;
+}
+
+function addMessage(text, sender) {
+  const messagesDiv = document.getElementById('messages');
+  const msgEl = document.createElement('div');
+  msgEl.className = 'msg ' + sender;
+  if (sender === 'bot') {
+    msgEl.innerHTML = formatBotText(text);
+  } else {
+    msgEl.textContent = text;
+  }
+  messagesDiv.appendChild(msgEl);
+
+  if (!isReplaying && (sender === 'user' || sender === 'bot')) {
+    displayLog.push({ text, sender });
+  }
+
+  // Add speak + flashcard actions under plain bot replies (not typing indicator)
+  if (sender === 'bot') {
+    const actions = document.createElement('div');
+    actions.className = 'msg-actions';
+
+    const speakBtn = document.createElement('button');
+    speakBtn.className = 'msg-action-btn';
+    speakBtn.title = 'Listen';
+    speakBtn.textContent = '🔊';
+    speakBtn.onclick = () => toggleSpeak(text, speakBtn);
+    actions.appendChild(speakBtn);
+
+    const cardBtn = document.createElement('button');
+    cardBtn.className = 'msg-action-btn';
+    cardBtn.title = 'Save as flashcard';
+    cardBtn.textContent = '🗂';
+    cardBtn.onclick = () => saveFlashcard(lastUserQuestion, text);
+    actions.appendChild(cardBtn);
+
+    messagesDiv.appendChild(actions);
+  }
+
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  return msgEl;
+}
+
+function renderMCQ(questionText, options) {
+  const messagesDiv = document.getElementById('messages');
+  const letters = ['A', 'B', 'C', 'D'];
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'mcq-options';
+
+  const qEl = document.createElement('div');
+  qEl.className = 'mcq-question';
+  qEl.textContent = questionText;
+  wrapper.appendChild(qEl);
+
+  options.forEach((optText, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'mcq-option-btn';
+    btn.textContent = `${letters[i]}) ${optText}`;
+    btn.onclick = () => pickMCQOption(wrapper, btn, letters[i]);
+    wrapper.appendChild(btn);
+  });
+
+  messagesDiv.appendChild(wrapper);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function pickMCQOption(wrapper, clickedBtn, letter) {
+  wrapper.querySelectorAll('.mcq-option-btn').forEach(b => b.disabled = true);
+  clickedBtn.classList.add('picked');
+  activeMCQWrapper = wrapper;
+  activeMCQPickedLetter = letter;
+
+  addMessage(letter, 'user');
+  conversationHistory.push({ role: 'user', content: letter });
+  callBot();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  lastUserQuestion = text;
+  addMessage(text, 'user');
+  conversationHistory.push({ role: 'user', content: text });
+  input.value = '';
+  await callBot();
+}
+
+// ---------- API Key & Provider (only needed when running this file outside Claude) ----------
+function buildApiHeaders() {
+  const headers = { "Content-Type": "application/json" };
+  if (userApiKey) {
+    headers["x-api-key"] = userApiKey;
+    headers["anthropic-version"] = "2023-06-01";
+    headers["anthropic-dangerous-direct-browser-access"] = "true";
+  }
+  return headers;
+}
+
+function onProviderChange() {
+  const selected = document.querySelector('input[name="aiProvider"]:checked').value;
+  const input = document.getElementById('apiKeyInput');
+  if (selected === 'gemini') {
+    input.placeholder = 'Paste your free Gemini API key here';
+  } else if (selected === 'claude') {
+    input.placeholder = 'Paste your Anthropic API key (sk-ant-...)';
+  } else {
+    input.placeholder = 'No key needed for Built-in';
+  }
+}
+
+function toggleApiKeyBar() {
+  document.getElementById('apiKeyBar').classList.toggle('show');
+}
+
+function saveApiKey() {
+  const input = document.getElementById('apiKeyInput');
+  const key = input.value.trim();
+  if (!key) return;
+  const selectedProvider = document.querySelector('input[name="aiProvider"]:checked').value;
+  userApiKey = key;
+  aiProvider = selectedProvider;
+  try {
+    localStorage.setItem('learnbot-api-key', key);
+    localStorage.setItem('learnbot-ai-provider', aiProvider);
+  } catch (err) {
+    // localStorage isn't available in every environment (e.g. inside Claude) — that's fine,
+    // the key still works for this session via the in-memory variable.
+  }
+  input.value = '';
+  document.getElementById('apiKeyBar').classList.remove('show');
+  addMessage(`${aiProvider === 'gemini' ? 'Gemini' : 'Claude'} API key saved for this browser. You can now chat with me even outside Claude.`, 'bot');
+}
+
+function clearApiKey() {
+  userApiKey = '';
+  aiProvider = 'claude';
+  try {
+    localStorage.removeItem('learnbot-api-key');
+    localStorage.removeItem('learnbot-ai-provider');
+  } catch (err) {
+    // ignore
+  }
+  document.getElementById('apiKeyInput').value = '';
+  document.getElementById('apiKeyBar').classList.remove('show');
+}
+
+function loadApiKeyFromLocalStorage() {
+  try {
+    const saved = localStorage.getItem('learnbot-api-key');
+    const savedProvider = localStorage.getItem('learnbot-ai-provider');
+    if (saved) userApiKey = saved;
+    if (savedProvider) {
+      aiProvider = savedProvider;
+      const radio = document.querySelector(`input[name="aiProvider"][value="${savedProvider}"]`);
+      if (radio) radio.checked = true;
+    }
+  } catch (err) {
+    // localStorage not available — ignore, just means no saved key this session
+  }
+}
+
+// Convert our Claude-style conversationHistory into Gemini's expected format
+function buildGeminiContents() {
+  return conversationHistory.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }]
+  }));
+}
+
+async function callGeminiAPI(systemPrompt) {
+  const model = 'gemini-3.6-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(userApiKey)}`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: buildGeminiContents()
+    })
+  });
+
+  const data = await response.json();
+  if (data.error) {
+    throw new Error(data.error.message || 'Gemini API error');
+  }
+
+  const parts = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
+  const text = parts ? parts.map(p => p.text || '').join('\n').trim() : '';
+  return text || "Sorry, I didn't understand that.";
+}
+
+async function callClaudeAPI(systemPrompt) {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: buildApiHeaders(),
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: conversationHistory
+    })
+  });
+  const data = await response.json();
+  if (data.error) {
+    throw new Error(data.error.message || 'Claude API error');
+  }
+  return data.content.map(c => c.text || "").join("\n").trim() || "Sorry, I didn't understand that.";
+}
+
+// Calls our own hidden backend (Netlify function) — the real API key
+// lives on the server as an environment variable, never sent to the browser.
+async function callServerAPI(systemPrompt) {
+  const response = await fetch('/.netlify/functions/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ systemPrompt, messages: conversationHistory })
+  });
+  const data = await response.json();
+  if (data.error) {
+    throw new Error(data.error);
+  }
+  return data.reply || "Sorry, I didn't understand that.";
+}
+
+async function callBot() {
+  const input = document.getElementById('userInput');
+  const sendBtn = document.getElementById('sendBtn');
+  sendBtn.disabled = true;
+
+  const typingEl = addMessage('Typing...', 'bot typing');
+
+  try {
+    let botReply;
+    if (aiProvider === 'server') {
+      botReply = await callServerAPI(getSystemPrompt());
+    } else if (aiProvider === 'gemini' && userApiKey) {
+      botReply = await callGeminiAPI(getSystemPrompt());
+    } else {
+      botReply = await callClaudeAPI(getSystemPrompt());
+    }
+
+    // Parse quiz score marker if present, then strip it from the visible reply
+    if (quizActive) {
+      const scoreMatch = botReply.match(/\[\[SCORE:(CORRECT|INCORRECT):([^\]]*)\]\]/);
+      if (scoreMatch) {
+        quizScore.total += 1;
+        const wasCorrect = scoreMatch[1] === 'CORRECT';
+        const correctLetter = scoreMatch[2].trim();
+        if (wasCorrect) quizScore.correct += 1;
+        updateScoreBadge();
+        botReply = botReply.replace(/\s*\[\[SCORE:(CORRECT|INCORRECT):([^\]]*)\]\]\s*$/, '').trim();
+
+        // Color the previous MCQ options based on the result
+        if (activeMCQWrapper && quizType === 'mcq' && correctLetter && correctLetter !== '-') {
+          const buttons = activeMCQWrapper.querySelectorAll('.mcq-option-btn');
+          buttons.forEach(b => {
+            const btnLetter = b.textContent.trim().charAt(0);
+            if (btnLetter === correctLetter) b.classList.add('correct-answer');
+            else if (btnLetter === activeMCQPickedLetter && !wasCorrect) b.classList.add('wrong-answer');
+          });
+        }
+        activeMCQWrapper = null;
+        activeMCQPickedLetter = null;
+      }
+    }
+
+    typingEl.remove();
+
+    // If this is an MCQ-formatted question, render any feedback text separately, then clickable options
+    const mcqMatch = quizActive && quizType === 'mcq'
+      ? botReply.match(/QUESTION:\s*([\s\S]*?)\n\s*A\)\s*(.*)\n\s*B\)\s*(.*)\n\s*C\)\s*(.*)\n\s*D\)\s*(.*)/)
+      : null;
+
+    if (mcqMatch) {
+      const feedbackText = botReply.slice(0, mcqMatch.index).trim();
+      if (feedbackText) addMessage(feedbackText, 'bot');
+      renderMCQ(mcqMatch[1].trim(), [mcqMatch[2].trim(), mcqMatch[3].trim(), mcqMatch[4].trim(), mcqMatch[5].trim()]);
+    } else {
+      addMessage(botReply, 'bot');
+    }
+    conversationHistory.push({ role: 'assistant', content: botReply });
+    saveStateToStorage();
+
+  } catch (err) {
+    typingEl.remove();
+    addMessage("Something went wrong: " + err.message, 'bot');
+    console.error(err);
+  } finally {
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+// ---------- Text-to-Speech ----------
+let currentSpeakingBtn = null;
+
+function toggleSpeak(text, btnEl) {
+  if (!window.speechSynthesis) {
+    alert('Text-to-speech is not supported in this browser.');
+    return;
+  }
+
+  // If this exact button is currently speaking, stop it completely
+  if (currentSpeakingBtn === btnEl) {
+    window.speechSynthesis.cancel();
+    resetSpeakBtn(btnEl);
+    currentSpeakingBtn = null;
+    return;
+  }
+
+  // Stop whatever else was speaking first
+  window.speechSynthesis.cancel();
+  if (currentSpeakingBtn) resetSpeakBtn(currentSpeakingBtn);
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.onend = () => {
+    resetSpeakBtn(btnEl);
+    currentSpeakingBtn = null;
+  };
+  utterance.onerror = () => {
+    resetSpeakBtn(btnEl);
+    currentSpeakingBtn = null;
+  };
+
+  currentSpeakingBtn = btnEl;
+  btnEl.textContent = '⏹';
+  window.speechSynthesis.speak(utterance);
+}
+
+function resetSpeakBtn(btnEl) {
+  if (btnEl) btnEl.textContent = '🔊';
+}
+
+// ---------- Flashcards ----------
+function saveFlashcard(front, back) {
+  const cardFront = front && front.trim() ? front.trim() : 'Flashcard';
+  flashcards.push({ front: cardFront, back: back });
+  flashcardIndex = flashcards.length - 1;
+  flashcardFlipped = false;
+  saveStateToStorage();
+}
+
+function openFlashcardsViewer() {
+  document.getElementById('flashcardsOverlay').classList.add('show');
+  renderFlashcardViewer();
+}
+
+function closeFlashcardsViewer() {
+  document.getElementById('flashcardsOverlay').classList.remove('show');
+}
+
+function renderFlashcardViewer() {
+  const emptyEl = document.getElementById('flashcardsEmpty');
+  const bodyEl = document.getElementById('flashcardsViewerBody');
+
+  if (flashcards.length === 0) {
+    emptyEl.style.display = 'block';
+    bodyEl.style.display = 'none';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  bodyEl.style.display = 'flex';
+
+  if (flashcardIndex >= flashcards.length) flashcardIndex = flashcards.length - 1;
+  const card = flashcards[flashcardIndex];
+  document.getElementById('flashcardFace').textContent = flashcardFlipped ? card.back : card.front;
+  document.getElementById('flashcardCounter').textContent = `${flashcardIndex + 1} / ${flashcards.length}`;
+}
+
+function flipFlashcard() {
+  flashcardFlipped = !flashcardFlipped;
+  renderFlashcardViewer();
+}
+
+function navFlashcard(direction) {
+  if (flashcards.length === 0) return;
+  flashcardIndex = (flashcardIndex + direction + flashcards.length) % flashcards.length;
+  flashcardFlipped = false;
+  renderFlashcardViewer();
+}
+
+// ---------- Progress Tracker ----------
+function toggleProgressPanel() {
+  const panel = document.getElementById('progressPanel');
+  panel.classList.toggle('show');
+  if (panel.classList.contains('show')) renderProgressPanel();
+}
+
+function trackSubjectVisit(subjectKey) {
+  const label = SUBJECT_LABELS[subjectKey];
+  if (!progressSubjects.includes(label)) progressSubjects.push(label);
+}
+
+function trackQuizCompletion(topic, type, score) {
+  progressQuizzes.push({ topic, type, correct: score.correct, total: score.total });
+}
+
+function renderProgressPanel() {
+  const el = document.getElementById('progressContent');
+  let html = '';
+
+  html += '<div class="progress-section-title">Subjects covered</div>';
+  if (progressSubjects.length === 0) {
+    html += '<div class="progress-empty">No subjects picked yet.</div>';
+  } else {
+    html += progressSubjects.map(s => `<span class="progress-chip">${s}</span>`).join('');
+  }
+
+  html += '<div class="progress-section-title">Quizzes completed</div>';
+  if (progressQuizzes.length === 0) {
+    html += '<div class="progress-empty">No quizzes finished yet.</div>';
+  } else {
+    html += progressQuizzes.map(q =>
+      `<div class="progress-quiz-row">${q.topic} (${q.type === 'mcq' ? 'MCQ' : 'Type Answer'}) — ${q.correct}/${q.total}</div>`
+    ).join('');
+  }
+
+  html += '<div class="progress-section-title">Flashcards saved</div>';
+  html += `<div class="progress-chip">${flashcards.length} card${flashcards.length === 1 ? '' : 's'}</div>`;
+
+  el.innerHTML = html;
+}
+
+// ---------- File Upload ----------
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    uploadedFileContent = e.target.result;
+    uploadedFileName = file.name;
+    document.getElementById('uploadFileName').textContent = `📎 ${uploadedFileName} loaded`;
+    document.getElementById('uploadBar').classList.add('show');
+
+    // Put the file content into the text bar. User can add a question
+    // and press Send whenever they're ready — nothing is sent automatically.
+    const input = document.getElementById('userInput');
+    input.value = uploadedFileContent;
+    input.focus();
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function clearUploadedFile() {
+  const input = document.getElementById('userInput');
+  if (input.value === uploadedFileContent) input.value = '';
+  uploadedFileContent = '';
+  uploadedFileName = '';
+  document.getElementById('uploadBar').classList.remove('show');
+}
+
+// ---------- Persistent Data Save ----------
+async function saveStateToStorage() {
+  try {
+    const state = {
+      conversationHistory,
+      displayLog,
+      flashcards,
+      progressSubjects,
+      progressQuizzes,
+      currentSubject,
+      isDarkMode
+    };
+    await window.storage.set('learnbot-state', JSON.stringify(state), false);
+  } catch (err) {
+    console.error('Save failed:', err);
+  }
+}
+
+async function loadStateFromStorage() {
+  try {
+    const result = await window.storage.get('learnbot-state', false);
+    if (!result) return false;
+    const state = JSON.parse(result.value);
+
+    conversationHistory = state.conversationHistory || [];
+    flashcards = state.flashcards || [];
+    progressSubjects = state.progressSubjects || [];
+    progressQuizzes = state.progressQuizzes || [];
+    currentSubject = state.currentSubject || null;
+    isDarkMode = !!state.isDarkMode;
+
+    document.body.classList.toggle('dark', isDarkMode);
+    document.getElementById('darkToggle').textContent = isDarkMode ? '☀️' : '🌙';
+
+    const subjKey = currentSubject || 'general';
+    document.getElementById('subjectBadge').textContent = `${SUBJECT_LABELS[subjKey]} ${SUBJECT_ICONS[subjKey]}`;
+    document.querySelectorAll('.subject-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.subject === subjKey);
+    });
+
+    const savedLog = state.displayLog || [];
+    if (savedLog.length > 0) {
+      isReplaying = true;
+      savedLog.forEach(m => addMessage(m.text, m.sender));
+      isReplaying = false;
+      displayLog = savedLog;
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.error('Load failed:', err);
+    return false;
+  }
+}
+
+// ---------- Export ----------
+function exportData() {
+  let content = '=== LearnBot Chat Export ===\n\n';
+
+  if (displayLog.length === 0) {
+    content += '(No messages yet.)\n';
+  } else {
+    displayLog.forEach(m => {
+      content += `${m.sender === 'user' ? 'You' : 'LearnBot'}: ${m.text}\n\n`;
+    });
+  }
+
+  if (flashcards.length > 0) {
+    content += '\n=== Flashcards ===\n\n';
+    flashcards.forEach((c, i) => {
+      content += `${i + 1}. Q: ${c.front}\n   A: ${c.back}\n\n`;
+    });
+  }
+
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'learnbot-export.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ---------- Init ----------
+(async function init() {
+  loadApiKeyFromLocalStorage();
+  const restored = await loadStateFromStorage();
+  if (!restored) {
+    addMessage("Hi! I'm LearnBot 🎓 Ask me anything you want to learn — by text or mic! Tap 📝 to start a quiz.", 'bot');
+  }
+})();
+</script>
+
+</body>
+</html>

@@ -1059,7 +1059,19 @@ async function callServerAPI(systemPrompt) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ systemPrompt, messages: conversationHistory })
   });
-  const data = await response.json();
+
+  const rawText = await response.text();
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch (parseErr) {
+    // Server didn't return JSON at all (e.g. Netlify's own error page, function crash, timeout)
+    if (!response.ok) {
+      throw new Error(`Server error (status ${response.status}). Check Netlify > Function logs for details.`);
+    }
+    throw new Error('Server returned an unexpected response. Check Netlify > Function logs for details.');
+  }
+
   if (data.error) {
     throw new Error(data.error);
   }

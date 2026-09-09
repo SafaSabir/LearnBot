@@ -1,13 +1,16 @@
 // This function runs on Netlify's servers, NOT in the visitor's browser.
 // Your Gemini API key lives here as a secret environment variable —
 // visitors never see it, no matter how much they inspect the page.
+
 exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+    return { statusCode: 405, body: 'Method Not Allowed' };
   }
+
   try {
     const { systemPrompt, messages } = JSON.parse(event.body);
     const apiKey = process.env.GEMINI_API_KEY;
+
     if (!apiKey) {
       return {
         statusCode: 500,
@@ -20,49 +23,19 @@ exports.handler = async function (event) {
       parts: [{ text: m.content }]
     }));
 
-    const model = 'gemini-2.5-flash'; // faster + widely available; avoids slow/unstable preview models
+    const model = 'gemini-3.6-flash';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-    // Abort the request ourselves BEFORE Netlify's own timeout kills the function.
-    // Netlify's default limit is 10s, so we cut off at 9s and return a clean JSON error.
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 9000);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt || '' }] },
+        contents
+      })
+    });
 
-    let response;
-    try {
-      response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: systemPrompt || '' }] },
-          contents
-        }),
-        signal: controller.signal
-      });
-    } catch (fetchErr) {
-      clearTimeout(timeout);
-      if (fetchErr.name === 'AbortError') {
-        return {
-          statusCode: 504,
-          body: JSON.stringify({ error: 'Gemini API took too long to respond. Please try again.' })
-        };
-      }
-      throw fetchErr;
-    }
-    clearTimeout(timeout);
-
-    // If Gemini itself returned a non-JSON body (rare, but happens on their outages),
-    // don't let response.json() throw an unhandled error.
-    let data;
-    const rawText = await response.text();
-    try {
-      data = JSON.parse(rawText);
-    } catch {
-      return {
-        statusCode: 502,
-        body: JSON.stringify({ error: `Gemini API returned an unexpected response (status ${response.status}).` })
-      };
-    }
+    const data = await response.json();
 
     if (data.error) {
       return { statusCode: 500, body: JSON.stringify({ error: data.error.message || 'Gemini API error' }) };

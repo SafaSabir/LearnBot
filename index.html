@@ -604,7 +604,18 @@ MULTIPLE CHOICE QUIZ FORMAT (jab user ne "multiple choice" quiz mangi ho):
   - Pehli line mein saaf saaf batao "Correct!" ya "Incorrect."
   - Agar Incorrect ho, to turant agli line mein sahi jawab ka letter aur uska text bhi batao (e.g. "The correct answer was C) <text>").
   - Phir chhota explanation do ke sahi jawab kyun sahi hai.
-  - Phir [[SCORE:...]] marker lagao (upar wale qaide ke mutabiq, X hamesha sahi jawab ka letter), aur us ke baad agla sawal usi QUESTION/A)/B)/C)/D) format mein do.`;
+  - Phir [[SCORE:...]] marker lagao (upar wale qaide ke mutabiq, X hamesha sahi jawab ka letter), aur us ke baad agla sawal usi QUESTION/A)/B)/C)/D) format mein do.
+
+SCHOOL INFORMATION — AL-BAANI ACADEMY:
+Ye chatbot Al-Baani Academy ki website par install hai. Agar koi user school ke baare mein poochay (history, address, contact, admission), neeche di gayi maloomat use karo. Ye info hamesha yaad rakho, kisi subject mode se koi farq nahi parta.
+
+- School ka naam: Al-Baani Academy
+- History: 2016 mein Academy ke tor par shuru hui, Matric aur Inter dono levels ke students ke liye. 2019 mein iska school section bhi bana — ab Al-Baani Academy Matric ke liye "School" hai, aur Inter ke liye "Academy" (jaisa shuru se hai).
+- Address: 6-B Block Marghzar Colony, Lahore, Pakistan
+- Phone: 0308 482 4882
+- Admission ke liye zaroori documents: Birth certificate, School leaving certificate (pichli school ka), Picture, Father's CNIC, Result card of last school (optional)
+- Fees aur timings: Ye bot ko exact maloom nahi. Agar koi fees ya timings poochay, to bot unhe seedha school se rabta karne ko kahe (phone number 0308 482 4882 par), aur khud koi number ya waqt na banaye.
+- Agar koi maloomat is list mein nahi hai (jaise koi teacher ka naam, specific class schedule), to bot saaf keh de ke ye maloomat uske paas nahi hai aur school se seedha maloom karne ko kahe.`;
 
 // Har subject ke liye extra instructions - subject choose karne par ye BASE_SYSTEM_PROMPT ke saath jud jati hain
 const SUBJECT_PROMPTS = {
@@ -1397,7 +1408,7 @@ function exportData() {
   loadApiKeyFromLocalStorage();
   const restored = await loadStateFromStorage();
   if (!restored) {
-    addMessage("Hi! I'm LearnBot 🎓 Ask me anything you want to learn — by text or mic! Tap 📝 to start a quiz.", 'bot');
+    addMessage("Hi! I'm LearnBot 🎓 — Al-Baani Academy's assistant. Ask me about admissions, the school, or anything you want to learn — by text or mic! Tap 📝 to start a quiz.", 'bot');
   }
 })();
 </script>
